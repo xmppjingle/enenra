@@ -39,7 +39,7 @@
 -spec load_credentials(string()) -> {ok, credentials()}.
 load_credentials(Filepath) ->
     {ok, JsonBin} = file:read_file(Filepath),
-    {Creds} = jiffy:decode(JsonBin),
+    {Creds} = jsone:decode(JsonBin, [{object_format, proplist}]),
     {ok, #credentials{
         type=proplists:get_value(<<"type">>, Creds),
         project_id=proplists:get_value(<<"project_id">>, Creds),
@@ -48,6 +48,8 @@ load_credentials(Filepath) ->
         client_email=proplists:get_value(<<"client_email">>, Creds),
         client_id=proplists:get_value(<<"client_id">>, Creds)
     }}.
+
+
 
 % @doc
 %
