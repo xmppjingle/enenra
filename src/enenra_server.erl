@@ -9,6 +9,7 @@
 -behavior(gen_server).
 -export([start_link/0, call/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+-export([get_auth_token/1]).
 
 -define(BASE_URL, <<"https://www.googleapis.com/storage/v1/b/">>).
 -define(UPLOAD_URL, <<"https://www.googleapis.com/upload/storage/v1/b/">>).
