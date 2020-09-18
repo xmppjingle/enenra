@@ -39,7 +39,7 @@
 -spec load_credentials(string()) -> {ok, credentials()}.
 load_credentials(Filepath) ->
     {ok, JsonBin} = file:read_file(Filepath),
-    {Creds} = jsone:decode(JsonBin, [{object_format, proplist}]),
+    Creds = jsone:decode(JsonBin, [{object_format, proplist}]),
     {ok, #credentials{
         type=proplists:get_value(<<"type">>, Creds),
         project_id=proplists:get_value(<<"project_id">>, Creds),

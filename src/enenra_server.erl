@@ -474,7 +474,7 @@ decode_response(409, _Headers, Client) ->
 decode_response(Ok, _Headers, Client) when Ok == 200; Ok == 201 ->
     {ok, Body} = hackney:body(Client),
     try jsone:decode(Body, [{object_format, proplist}]) of
-        {Results} -> {ok, Results}
+        Results -> {ok, Results}
     catch
         Error -> Error
     end;
@@ -485,7 +485,7 @@ decode_response(204, _Headers, Client) ->
 decode_response(_Status, _Headers, Client) ->
     {ok, Body} = hackney:body(Client),
     try jsone:decode(Body, [{object_format, proplist}]) of
-        {Results} -> {ok, Results}
+        Results -> {ok, Results}
     catch
         Error -> Error
     end.
