@@ -1,10 +1,38 @@
 -module(saci_utils).
 
+-include_lib("public_key/include/public_key.hrl").
+-include("saci.hrl").
+
+-export([load_credentials/1]).
+
 -export([
 	send_req/5,
 	send_req/4,
-	urlencode/1
+  send_req/3,
+	urlencode/1,
+  compute_md5/1
 	]).
+
+% @doc
+%
+% Load the credentials for the given file, which is assumed to be a JSON
+% file containing the client email address, project identifier, private key
+% in PEM format, as well as other properties.
+%
+-spec load_credentials(string()) -> {ok, credentials()}.
+load_credentials(Filepath) ->
+    {ok, JsonBin} = file:read_file(Filepath),
+    Creds = jsone:decode(JsonBin, [{object_format, proplist}]),
+    {ok, #credentials{
+        type=proplists:get_value(<<"type">>, Creds),
+        project_id=proplists:get_value(<<"project_id">>, Creds),
+        private_key_id=proplists:get_value(<<"private_key_id">>, Creds),
+        private_key=proplists:get_value(<<"private_key">>, Creds),
+        client_email=proplists:get_value(<<"client_email">>, Creds),
+        client_id=proplists:get_value(<<"client_id">>, Creds)
+    }}.
+
+
 
 %% @doc URL encode a string binary.
 % -spec urlencode(binary() | string()) -> binary().
@@ -98,6 +126,11 @@ encode_form(KVs) ->
   CTypeHeaders = [{<<"Content-Type">>, <<"application/x-www-form-urlencoded; charset=utf-8">>}],
   {erlang:byte_size(Lines), CTypeHeaders, Lines}.
 
+% HTTP Client Adapters
+
+send_req(Method, URL, Headers) ->
+  send_req(Method, URL, Headers, <<>>, []).
+
 send_req(Method, URL, Headers, ReqBody) ->
 	send_req(Method, URL, Headers, ReqBody, []).
 
@@ -107,3 +140,40 @@ send_req(post, URL, Headers, {form, PropListParams}, Options) ->
 send_req(Method, URL, Headers, ReqBody, Options) ->
 	ibrowse:send_req(URL, Headers, Method, ReqBody, Options).
 	% {ok, Status, Headers, Client} = ibrowse:send_req(?AUTH_URL, [], post, ReqBody, []),
+
+% @doc
+%
+% Compute the MD5 checksum for the named file, returning the Base64 encoded
+% result. This value can be given in the upload request and Google Cloud
+% Storage will verify the upload was successful by comparing the checksum
+% with its own computation.
+%
+-spec compute_md5(Filename) -> {ok, Digest} | {error, Reason} when
+    Filename :: string(),
+    Digest :: string(),
+    Reason :: term().
+compute_md5(Filename) ->
+    {ok, Filehandle} = file:open(Filename, [read, binary, read_ahead]),
+    Context = erlang:md5_init(),
+    case compute_md5(Filehandle, Context) of
+        {ok, Digest} -> {ok, base64:encode(Digest)};
+        R -> R
+    end.
+
+% @doc
+%
+% Helper function that recursively computes the MD5 of the opened file in
+% 64KB chunks. The file will be closed upon successful completion.
+%
+compute_md5(Filehandle, Context) ->
+    case file:read(Filehandle, 65536) of
+        {ok, Data} ->
+            NewContext = erlang:md5_update(Context, Data),
+            compute_md5(Filehandle, NewContext);
+        eof ->
+            case file:close(Filehandle) of
+                ok -> {ok, erlang:md5_final(Context)};
+                RR -> RR
+            end;
+        R -> R
+    end.

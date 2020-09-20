@@ -1,6 +1,6 @@
 {application, saci, [
     {description, "An Google Cloud Storage utility Library."},
-    {vsn, "0.3.0"},
+    {vsn, "0.0.1"},
     {registered, []},
     {applications, [
         kernel,
@@ -9,5 +9,5 @@
         ibrowse
     ]},
     {env, []},
-    {mod, {saci_app, []}}
+    {mod, {saci, []}}
 ]}.
