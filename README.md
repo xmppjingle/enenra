@@ -8,6 +8,40 @@ Redesigned as a utility, it aims to support flexible handling of multiple creden
 Named after Saci which is a character in Brazilian folklore, a one-legged black or  youngster, who smokes a pipe and wears a magical red cap that enables him to disappear and reappear wherever he wishes (usually in the middle of a dust devil). [Saci](https://en.wikipedia.org/wiki/Saci_(Brazilian_folklore))
 The new name is a homage to its predecessor.
 
+```
+                                                            
+                 ///+oss/`     ``                           
+                 /o//omdddyshddddho:`                       
+                      -hmmdddddddddhh+`                     
+                       `+ymmmdddmmmmdh+                     
+                           ymmNmddddddd-                    
+                           +NmddddhhyNd`                    
+                    .-      :dddddhhdddo`                   
+        ``       ./ydhyo/-   `+dddmdmmm-.-::-               
+        `//::::/oyhyo+ddddhso/-ydmhydy/ -ohdh-              
+       -osshdhs/-`     :odddhhdddo`    /o/yyo:              
+       `-/+o`            oNmhohddo`    ys+/+:`              
+                        /mmmdyhddho   -do                   
+                       -dddmmmmhdmh/.:yd-                   
+                       sdddhhs`  +dddyyh`                   
+                       hdddhd`    `:sdy-                    
+                       ddhhhy                               
+                       dmddhyo:.                            
+                       .oydmddyyo:                          
+                           .+hmmddo`                        
+                               -ddh+                        
+                              .mddh.                        
+                              /Nms`                         
+                              yd:                           
+                            `ym+                            
+                           :Nmds`                           
+                           `+hmds                           
+                              smds-`                        
+                  ``  ``.-://+sddhy+`  `                    
+                              ````                         
+```
+                              
+
 ## Requirements
 
 * [Erlang/OTP](http://www.erlang.org) R18 or R19
