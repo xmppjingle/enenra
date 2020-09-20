@@ -11,7 +11,7 @@
 % @version 0.3.0
 % @doc A library for interfacing with Google Cloud Storage.
 %
-% `enenra' is an Erlang/OTP library for creating buckets, uploading objects,
+% `saci' is an Erlang/OTP library for creating buckets, uploading objects,
 % and otherwise managing said resources on Google Cloud Storage. This is
 % done via the HTTP/JSON API described in the Google Cloud Storage
 % documentation ([https://cloud.google.com/storage/docs/json_api/]).
@@ -21,9 +21,9 @@
 % existing resources. The `read-write' scope only allows creating and
 % deleting, but not patching.
 %
--module(enenra).
+-module(saci).
 
--include("enenra.hrl").
+-include("saci.hrl").
 
 -export([load_credentials/1, compute_md5/1, validate_bucket_name/1]).
 -export([list_buckets/1, get_bucket/2, insert_bucket/2, update_bucket/3, delete_bucket/2]).
@@ -60,7 +60,7 @@ load_credentials(Filepath) ->
     Buckets :: [bucket()],
     Reason :: term().
 list_buckets(Credentials) ->
-    enenra_server:call({list_buckets, Credentials}).
+    saci_server:call({list_buckets, Credentials}).
 
 % @doc
 %
@@ -72,7 +72,7 @@ list_buckets(Credentials) ->
     Bucket :: bucket(),
     Reason :: term().
 get_bucket(Name, Credentials) ->
-    enenra_server:call({get_bucket, Name, Credentials}).
+    saci_server:call({get_bucket, Name, Credentials}).
 
 % @doc
 %
@@ -84,7 +84,7 @@ get_bucket(Name, Credentials) ->
     Reason :: term().
 insert_bucket(Bucket, Credentials) ->
     case validate_bucket_name(Bucket#bucket.name) of
-        ok -> enenra_server:call({insert_bucket, Bucket, Credentials});
+        ok -> saci_server:call({insert_bucket, Bucket, Credentials});
         R -> R
     end.
 
@@ -97,7 +97,7 @@ insert_bucket(Bucket, Credentials) ->
     Name :: binary(),
     Reason :: term().
 delete_bucket(Name, Credentials) ->
-    enenra_server:call({delete_bucket, Name, Credentials}).
+    saci_server:call({delete_bucket, Name, Credentials}).
 
 % @doc
 %
@@ -112,7 +112,7 @@ delete_bucket(Name, Credentials) ->
     Name :: binary(),
     Reason :: term().
 update_bucket(Name, Properties, Credentials) ->
-    enenra_server:call({update_bucket, Name, Properties, Credentials}).
+    saci_server:call({update_bucket, Name, Properties, Credentials}).
 
 % @doc
 %
@@ -124,7 +124,7 @@ update_bucket(Name, Properties, Credentials) ->
     Objects :: [object()],
     Reason :: term().
 list_objects(BucketName, Credentials) ->
-    enenra_server:call({list_objects, BucketName, Credentials}).
+    saci_server:call({list_objects, BucketName, Credentials}).
 
 % @doc
 %
@@ -139,7 +139,7 @@ list_objects(BucketName, Credentials) ->
     Reason :: term().
 upload_file(Filename, Object, Credentials) ->
     RequestBody = {file, Filename},
-    enenra_server:call({upload_object, Object, RequestBody, Credentials}).
+    saci_server:call({upload_object, Object, RequestBody, Credentials}).
 
 % @doc
 %
@@ -153,7 +153,7 @@ upload_file(Filename, Object, Credentials) ->
     Credentials :: credentials(),
     Reason :: term().
 upload_data(Data, Object, Credentials) ->
-    enenra_server:call({upload_object, Object, Data, Credentials}).
+    saci_server:call({upload_object, Object, Data, Credentials}).
 
 % @doc
 %
@@ -168,7 +168,7 @@ upload_data(Data, Object, Credentials) ->
     Credentials :: credentials(),
     Reason :: term().
 download_object(BucketName, ObjectName, Filename, Credentials) ->
-    enenra_server:call({download_object, BucketName, ObjectName, Filename, Credentials}).
+    saci_server:call({download_object, BucketName, ObjectName, Filename, Credentials}).
 
 % @doc
 %
@@ -183,7 +183,7 @@ download_object(BucketName, ObjectName, Filename, Credentials) ->
     Object :: object(),
     Reason :: term().
 get_object(BucketName, ObjectName, Credentials) ->
-    enenra_server:call({get_object, BucketName, ObjectName, Credentials}).
+    saci_server:call({get_object, BucketName, ObjectName, Credentials}).
 
 % @doc
 %
@@ -198,7 +198,7 @@ get_object(BucketName, ObjectName, Credentials) ->
     ObjectContents :: binary(),
     Reason :: term().
 get_object_contents(BucketName, ObjectName, Credentials) ->
-    enenra_server:call({get_object_contents, BucketName, ObjectName, Credentials}).
+    saci_server:call({get_object_contents, BucketName, ObjectName, Credentials}).
 
 % @doc
 %
@@ -214,7 +214,7 @@ get_object_contents(BucketName, ObjectName, Credentials) ->
     ObjectName :: binary(),
     Reason :: term().
 update_object(BucketName, ObjectName, Properties, Credentials) ->
-    enenra_server:call({update_object, BucketName, ObjectName, Properties, Credentials}).
+    saci_server:call({update_object, BucketName, ObjectName, Properties, Credentials}).
 
 % @doc
 %
@@ -227,7 +227,7 @@ update_object(BucketName, ObjectName, Properties, Credentials) ->
     Credentials :: credentials(),
     Reason :: term().
 delete_object(BucketName, ObjectName, Credentials) ->
-    enenra_server:call({delete_object, BucketName, ObjectName, Credentials}).
+    saci_server:call({delete_object, BucketName, ObjectName, Credentials}).
 
 % @doc
 %

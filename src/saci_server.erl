@@ -4,7 +4,7 @@
 %% Use of this source code is governed by a BSD-style
 %% license that can be found in the LICENSE file.
 %%
--module(enenra_server).
+-module(saci_server).
 
 -behavior(gen_server).
 -export([start_link/0, call/1]).
@@ -13,7 +13,7 @@
 
 -define(BASE_URL, <<"https://www.googleapis.com/storage/v1/b/">>).
 -define(UPLOAD_URL, <<"https://www.googleapis.com/upload/storage/v1/b/">>).
--define(AUTH_URL, <<"https://www.googleapis.com/oauth2/v4/token">>).
+-define(AUTH_URL, "https://www.googleapis.com/oauth2/v4/token").
 -define(AUD_URL, <<"https://www.googleapis.com/oauth2/v4/token">>).
 
 -define(GOOGLE_INTERNAL_AUTH_URL, <<"http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token">>).
@@ -28,7 +28,7 @@
 -define(GRANT_TYPE, <<"urn:ietf:params:oauth:grant-type:jwt-bearer">>).
 
 -include_lib("public_key/include/public_key.hrl").
--include("enenra.hrl").
+-include("saci.hrl").
 
 -record(state, {token}).
 
@@ -135,7 +135,7 @@ list_buckets(Credentials, Token) ->
     Project = Credentials#credentials.project_id,
     Url = hackney_url:make_url(?BASE_URL, <<"">>, [{"project", Project}]),
     ReqHeaders = add_auth_header(Token, []),
-    {ok, Status, Headers, Client} = hackney:request(get, Url, ReqHeaders),
+    {ok, Status, Headers, Client} = saci_utils:send_req(get, Url, ReqHeaders),
     case decode_response(Status, Headers, Client) of
         {ok, Body} ->
             Items = proplists:get_value(<<"items">>, Body, []),
@@ -151,7 +151,7 @@ list_buckets(Credentials, Token) ->
 get_bucket(Name, Token) ->
     Url = <<?BASE_URL/binary, Name/binary>>,
     ReqHeaders = add_auth_header(Token, []),
-    {ok, Status, Headers, Client} = hackney:request(get, Url, ReqHeaders),
+    {ok, Status, Headers, Client} = saci_utils:send_req(get, Url, ReqHeaders),
     case decode_response(Status, Headers, Client) of
         {ok, Body} -> {ok, make_bucket(Body)};
         R -> R
@@ -175,7 +175,7 @@ insert_bucket(Bucket, Credentials, Token) ->
         {<<"location">>, Bucket#bucket.location},
         {<<"storageClass">>, Bucket#bucket.storageClass}
     ]})),
-    {ok, Status, Headers, Client} = hackney:request(post, Url, ReqHeaders, ReqBody),
+    {ok, Status, Headers, Client} = saci_utils:send_req(post, Url, ReqHeaders, ReqBody),
     case decode_response(Status, Headers, Client) of
         {ok, Body} -> {ok, make_bucket(Body)};
         {error, conflict} -> get_bucket(Bucket#bucket.name, Token);
@@ -196,7 +196,7 @@ update_bucket(Name, Properties, Token) ->
         {<<"Content-Type">>, <<"application/json">>}
     ]),
     ReqBody = binary_to_list(jsone:encode({Properties})),
-    {ok, Status, Headers, Client} = hackney:request(patch, Url, ReqHeaders, ReqBody),
+    {ok, Status, Headers, Client} = saci_utils:send_req(patch, Url, ReqHeaders, ReqBody),
     case decode_response(Status, Headers, Client) of
         {ok, Body} -> {ok, make_bucket(Body)};
         R -> R
@@ -211,7 +211,7 @@ update_bucket(Name, Properties, Token) ->
 delete_bucket(Name, Token) ->
     Url = <<?BASE_URL/binary, Name/binary>>,
     ReqHeaders = add_auth_header(Token, []),
-    {ok, Status, Headers, Client} = hackney:request(delete, Url, ReqHeaders),
+    {ok, Status, Headers, Client} = saci_utils:send_req(delete, Url, ReqHeaders),
     decode_response(Status, Headers, Client).
 
 % @doc
@@ -238,7 +238,7 @@ make_bucket(PropList) ->
 list_objects(BucketName, Token) ->
     Url = <<?BASE_URL/binary, BucketName/binary, "/o">>,
     ReqHeaders = add_auth_header(Token, []),
-    {ok, Status, Headers, Client} = hackney:request(get, Url, ReqHeaders),
+    {ok, Status, Headers, Client} = saci_utils:send_req(get, Url, ReqHeaders),
     case decode_response(Status, Headers, Client) of
         {ok, Body} ->
             Items = proplists:get_value(<<"items">>, Body, []),
@@ -266,7 +266,7 @@ upload_object(Object, RequestBody, Token) ->
         % include the md5 so GCP can verify the upload was successful
         {<<"md5Hash">>, Object#object.md5Hash}
     ]})),
-    {ok, Status, Headers, Client} = hackney:request(post, Url, ReqHeaders, ReqBody),
+    {ok, Status, Headers, Client} = saci_utils:send_req(post, Url, ReqHeaders, ReqBody),
     case Status of
         200 ->
             % need to read/skip the body to close the connection
@@ -298,7 +298,7 @@ do_upload(Url, Object, RequestBody, Token) ->
     %
     % TODO: works on Erlang 19? but not on Erlang 20?
     %
-    case hackney:request(put, Url, ReqHeaders, RequestBody, Options) of
+    case saci_utils:send_req(put, Url, ReqHeaders, RequestBody, Options) of
         {ok, Status, Headers, Client} ->
             case decode_response(Status, Headers, Client) of
                 {ok, Body} -> {ok, make_object(Body)};
@@ -317,7 +317,7 @@ download_object(BucketName, ObjectName, Filename, Token) ->
     UrlPath = <<BucketName/binary, "/o/", ON/binary>>,
     Url = hackney_url:make_url(?BASE_URL, UrlPath, [{"alt", "media"}]),
     ReqHeaders = add_auth_header(Token, []),
-    {ok, Status, Headers, Client} = hackney:request(get, Url, ReqHeaders),
+    {ok, Status, Headers, Client} = saci_utils:send_req(get, Url, ReqHeaders),
     case Status of
         200 ->
             {ok, FileHandle} = file:open(Filename, [write]),
@@ -350,7 +350,7 @@ get_object(BucketName, ObjectName, Token) ->
     ON = hackney_url:urlencode(ObjectName),
     Url = <<?BASE_URL/binary, BucketName/binary, "/o/", ON/binary>>,
     ReqHeaders = add_auth_header(Token, []),
-    {ok, Status, Headers, Client} = hackney:request(get, Url, ReqHeaders),
+    {ok, Status, Headers, Client} = saci_utils:send_req(get, Url, ReqHeaders),
     case decode_response(Status, Headers, Client) of
         {ok, Body} -> {ok, make_object(Body)};
         R -> R
@@ -365,7 +365,7 @@ get_object_contents(BucketName, ObjectName, Token) ->
     UrlPath = <<BucketName/binary, "/o/", ON/binary>>,
     Url = hackney_url:make_url(?BASE_URL, UrlPath, [{"alt", "media"}]),
     ReqHeaders = add_auth_header(Token, []),
-    {ok, Status, Headers, Client} = hackney:request(get, Url, ReqHeaders),
+    {ok, Status, Headers, Client} = saci_utils:send_req(get, Url, ReqHeaders),
     case Status of
         200 -> stream_to_binary(Client);
         _ -> decode_response(Status, Headers, Client)
@@ -388,7 +388,7 @@ delete_object(BucketName, ObjectName, Token) ->
     ON = hackney_url:urlencode(ObjectName),
     Url = <<?BASE_URL/binary, BucketName/binary, "/o/", ON/binary>>,
     ReqHeaders = add_auth_header(Token, []),
-    {ok, Status, Headers, Client} = hackney:request(delete, Url, ReqHeaders),
+    {ok, Status, Headers, Client} = saci_utils:send_req(delete, Url, ReqHeaders),
     decode_response(Status, Headers, Client).
 
 % @doc
@@ -406,7 +406,7 @@ update_object(BucketName, ObjectName, Properties, Token) ->
         {<<"Content-Type">>, <<"application/json">>}
     ]),
     ReqBody = binary_to_list(jsone:encode({Properties})),
-    {ok, Status, Headers, Client} = hackney:request(patch, Url, ReqHeaders, ReqBody),
+    {ok, Status, Headers, Client} = saci_utils:send_req(patch, Url, ReqHeaders, ReqBody),
     case decode_response(Status, Headers, Client) of
         {ok, Body} -> {ok, make_object(Body)};
         R -> R
@@ -499,14 +499,14 @@ decode_response(_Status, _Headers, Client) ->
 -spec get_auth_token(credentials()) -> {ok, access_token()} | {error, term()}.
 get_auth_token(use_google_internal_metadata_server) ->
     %% it assumes that workload identity is properly configured
-    {ok, Status, Headers, Client} = hackney:request(get, ?GOOGLE_INTERNAL_AUTH_URL, [{<<"Metadata-Flavor">>, <<"Google">>}]),
-    decode_token_response(Status, Headers, Client);
+    {ok, _Status, _Headers, _Client} = saci_utils:send_req(get, ?GOOGLE_INTERNAL_AUTH_URL, [{<<"Metadata-Flavor">>, <<"Google">>}]),
+    ok; %decode_token_response(Status, Headers, Client);
 get_auth_token(Creds) ->
     Now = seconds_since_epoch(),
     % GCP seems to completely ignore the timeout value and always expires
     % in 3600 seconds anyway. Who knows, maybe someday it will work, but
     % you can forget about automated testing of expiration for now.
-    Timeout = application:get_env(enenra, auth_timeout, 3600),
+    Timeout = application:get_env(saci, auth_timeout, 3600),
     ClaimSet = base64:encode(jsone:encode({[
         {<<"iss">>, Creds#credentials.client_email},
         {<<"scope">>, ?FULL_CONTROL_SCOPE},
@@ -519,16 +519,21 @@ get_auth_token(Creds) ->
     Signature = compute_signature(PrivateKey, JwtPrefix),
     Jwt = <<JwtPrefix/binary, ".", Signature/binary>>,
     ReqBody = {form, [{<<"grant_type">>, ?GRANT_TYPE}, {<<"assertion">>, Jwt}]},
-    {ok, Status, Headers, Client} = hackney:request(post, ?AUTH_URL, [], ReqBody),
-    decode_token_response(Status, Headers, Client).
+    case saci_utils:send_req(post, ?AUTH_URL, [], ReqBody) of    
+           {ok, [$2 | _] = _Code, _Headers, Body}    -> decode_token_response(Body);
+           {ok, Code, _Headers, _}                   -> {error, {http, Code}};
+           {error, Error}                            -> {error, Error};
+           _Error                                    -> {error, unknown}
+    end.
 
-decode_token_response(Status, Headers, Client) ->
-    case decode_response(Status, Headers, Client) of
-        {ok, Token} ->
+decode_token_response(Body) ->
+    try jsone:decode(Body, [{object_format, proplist}]) of
+        Token when is_list(Token) ->
             AccessToken = proplists:get_value(<<"access_token">>, Token),
             TokenType = proplists:get_value(<<"token_type">>, Token),
-            {ok, #access_token{access_token=AccessToken, token_type=TokenType}};
-        R -> R
+            {ok, #access_token{access_token=AccessToken, token_type=TokenType}}
+    catch
+        Error -> Error
     end.
 
 % @doc

@@ -8,6 +8,7 @@
 .rebar3
 _*
 _build
+.DS_*
 doc
 erl_crash.dump
 rebar.lock

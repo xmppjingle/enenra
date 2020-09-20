@@ -4,7 +4,7 @@
 %% Use of this source code is governed by a BSD-style
 %% license that can be found in the LICENSE file.
 %%
--module(enenra_sup).
+-module(saci_sup).
 -behaviour(supervisor).
 
 -export([start_link/0]).
@@ -15,7 +15,7 @@ start_link() ->
 
 init([]) ->
     {ok, {{one_for_one, 10, 10}, [
-        {enenra_server,
-         {enenra_server, start_link, []},
-         permanent, 5000, worker, [enenra_server]}
+        {saci_server,
+         {saci_server, start_link, []},
+         permanent, 5000, worker, [saci_server]}
     ]}}.

@@ -1,13 +1,13 @@
-{application, enenra, [
-    {description, "An OTP library for Google Cloud Storage."},
+{application, saci, [
+    {description, "An Google Cloud Storage utility Library."},
     {vsn, "0.3.0"},
     {registered, []},
     {applications, [
         kernel,
         stdlib,
         jsone,
-        hackney
+        ibrowse
     ]},
     {env, []},
-    {mod, {enenra_app, []}}
+    {mod, {saci_app, []}}
 ]}.

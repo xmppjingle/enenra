@@ -116,14 +116,14 @@ object_lifecycle_test(Config) ->
     %
     % compute the MD5 of the file to be uploaded, ensure it is correct
     %
-    ImagePath = filename:join([DataDir, "IMG_5745.JPG"]),
+    ImagePath = filename:join([DataDir, "Saci_Perere_por_Marconi.jpg"]),
     {ok, Md5} = enenra:compute_md5(ImagePath),
     ?assertEqual(<<"kq56YDAH2p4mzAqrQw84kQ==">>, Md5),
 
     %
     % upload a file and ensure it now appears in the list of objects
     %
-    ObjectName = <<"IMG_5745.JPG">>,
+    ObjectName = <<"Saci_Perere_por_Marconi.jpg">>,
     MimeType = <<"image/jpeg">>,
     {ok, Object} = enenra:upload_file(ImagePath, #object{
         name = ObjectName,
@@ -180,7 +180,7 @@ object_lifecycle_test(Config) ->
     %
     % download the file again and compare the MD5 to verify
     %
-    Filename = filename:join(PrivDir, "IMG_5745.JPG"),
+    Filename = filename:join(PrivDir, "Saci_Perere_por_Marconi.jpg"),
     ok = enenra:download_object(BucketName, ObjectName, Filename, Creds),
     {ok, OutMd5} = enenra:compute_md5(Filename),
     ?assertEqual(Md5, OutMd5),
