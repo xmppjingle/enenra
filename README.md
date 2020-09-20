@@ -9,36 +9,26 @@ Named after Saci which is a character in Brazilian folklore, a one-legged black 
 The new name is a homage to its predecessor.
 
 ```
-                                                            
-                 ///+oss/`     ``                           
-                 /o//omdddyshddddho:`                       
-                      -hmmdddddddddhh+`                     
-                       `+ymmmdddmmmmdh+                     
-                           ymmNmddddddd-                    
-                           +NmddddhhyNd`                    
-                    .-      :dddddhhdddo`                   
-        ``       ./ydhyo/-   `+dddmdmmm-.-::-               
-        `//::::/oyhyo+ddddhso/-ydmhydy/ -ohdh-              
-       -osshdhs/-`     :odddhhdddo`    /o/yyo:              
-       `-/+o`            oNmhohddo`    ys+/+:`              
-                        /mmmdyhddho   -do                   
-                       -dddmmmmhdmh/.:yd-                   
-                       sdddhhs`  +dddyyh`                   
-                       hdddhd`    `:sdy-                    
-                       ddhhhy                               
-                       dmddhyo:.                            
-                       .oydmddyyo:                          
-                           .+hmmddo`                        
-                               -ddh+                        
-                              .mddh.                        
-                              /Nms`                         
-                              yd:                           
-                            `ym+                            
-                           :Nmds`                           
-                           `+hmds                           
-                              smds-`                        
-                  ``  ``.-://+sddhy+`  `                    
-                              ````                         
+              `.                        
+           :soydho+oos+-                
+               +mdddddddh-              
+                `:dmmmdddh`             
+                  +mddhhhd-             
+     `     `:ss/-` -ydddmm-.-.          
+     `/+++oo+//yddsoodd+o:./hh.         
+    `/os:.      .mdydd:   so+/.         
+                ymmhddh- :d`            
+               :dddh:-yhsys             
+               oddh:   .+o`             
+               sdhh+-                   
+               `/ohdhy/                 
+                   ./hd+                
+                    +dh-                
+                    ys`                 
+                  .yd`                  
+                  :hdo                  
+               ```..yds:    `           
+                ```.-:-.                             
 ```
                               
 
