@@ -14,7 +14,10 @@
 -include_lib("public_key/include/public_key.hrl").
 -include("saci.hrl").
 
--export([load_credentials/1]).
+-export([
+  load_credentials/1,
+  parse_credentials/1
+  ]).
 
 -export([
 	send_req/5,
