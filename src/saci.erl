@@ -26,8 +26,8 @@
 -include("saci.hrl").
 
 -export([
-    upload_file/3, 
-    download_object/4, 
+    upload_file/5,
+    download_file/6,
     delete_object/3
     ]).
 
@@ -37,14 +37,16 @@
 % Object, to the bucket named in the Object#bucket field. The returned
 % Object value will have the updated properties.
 %
--spec upload_file(Filename, Object, Credentials) -> {ok, Object} | {error, Reason} when
+-spec upload_file(Filename, Object, Token, Options, Timeout) -> {ok, Object} | {error, Reason} when
     Filename :: string(),
     Object :: object(),
-    Credentials :: credentials(),
+    Token :: access_token(),
+    Options :: list(),
+    Timeout :: integer(),
     Reason :: term().
-upload_file(Filename, Object, Credentials) ->
+upload_file(Filename, Object, Token, Options, Timeout) ->
     RequestBody = {file, Filename},
-    saci_service:upload_object(Object, RequestBody, Credentials).
+    saci_service:upload_object(Object, RequestBody, Token, Options, Timeout).
 
 % @doc
 %
@@ -52,25 +54,27 @@ upload_file(Filename, Object, Credentials) ->
 % storing the result in the file named Filename. Returns 'ok' on success,
 % or {error, Reason} if error.
 %
--spec download_object(BucketName, ObjectName, Filename, Credentials) -> ok | {error, Reason} when
+-spec download_file(BucketName, ObjectName, Filename, Token, Options, Timeout) -> ok | {error, Reason} when
     Filename :: string(),
     BucketName :: binary(),
     ObjectName :: binary(),
-    Credentials :: credentials(),
+    Token :: access_token(),
+    Options :: list(),
+    Timeout :: integer(),
     Reason :: term().
-download_object(BucketName, ObjectName, Filename, Credentials) ->
-    saci_service:download_object(BucketName, ObjectName, Filename, Credentials).
+download_file(BucketName, ObjectName, Filename, Token, Options, Timeout) ->
+    saci_service:download_object(BucketName, ObjectName, Filename, Token, [{save_response_to_file, Filename}] ++ Options, Timeout).
 
 % @doc
 %
 % Delete the object named ObjectName in the bucket named BucketName,
 % returning 'ok' if successful, or {error, Reason} if an error occurred.
 %
--spec delete_object(BucketName, ObjectName, Credentials) -> ok | {error, Reason} when
+-spec delete_object(BucketName, ObjectName, Token) -> ok | {error, Reason} when
     BucketName :: binary(),
     ObjectName :: binary(),
-    Credentials :: credentials(),
+    Token :: access_token(),
     Reason :: term().
-delete_object(BucketName, ObjectName, Credentials) ->
-    saci_service:delete_object(BucketName, ObjectName, Credentials).
+delete_object(BucketName, ObjectName, Token) ->
+    saci_service:delete_object(BucketName, ObjectName, Token).
 

@@ -6,10 +6,13 @@
 %%
 -module(saci_service).
 
+-include_lib("public_key/include/public_key.hrl").
+-include("saci.hrl").
+
 -export([
     get_auth_token/1,
-    download_object/4,
-    upload_object/3,
+    download_object/5,
+    upload_object/5,
     delete_object/3
     ]).
 
@@ -29,18 +32,15 @@
 -define(JWT_HEADER, <<"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9">>).
 -define(GRANT_TYPE, <<"urn:ietf:params:oauth:grant-type:jwt-bearer">>).
 
--include_lib("public_key/include/public_key.hrl").
--include("saci.hrl").
-
 % @doc
 %
 % Upload an object to the named bucket and return {ok, Object} or {error,
 % Reason}, where Object has the updated object properties.
 %
--spec upload_object(object(), request_body(), access_token()) -> {ok, object()} | {error, term()}.
-upload_object(Object, RequestBody, Token) ->
+-spec upload_object(object(), request_body(), access_token(), list(), integer()) -> {ok, object()} | {error, term()}.
+upload_object(Object, RequestBody, Token, Options, Timeout) ->
     BucketName = Object#object.bucket,
-    Url = hackney_url:make_url(
+    Url = saci_utils:make_url(
         ?UPLOAD_URL, <<BucketName/binary, "/o">>, [{"uploadType", "resumable"}]),
     ReqHeaders = add_auth_header(Token, [
         {<<"Content-Type">>, <<"application/json; charset=UTF-8">>},
@@ -52,14 +52,17 @@ upload_object(Object, RequestBody, Token) ->
         % include the md5 so GCP can verify the upload was successful
         {<<"md5Hash">>, Object#object.md5Hash}
     ]})),
-    {ok, Status, Headers, Client} = saci_utils:send_req(post, Url, ReqHeaders, ReqBody),
-    case Status of
-        200 ->
-            % need to read/skip the body to close the connection
-            hackney:skip_body(Client),
-            UploadUrl = proplists:get_value(<<"Location">>, Headers),
-            do_upload(UploadUrl, Object, RequestBody, Token);
-        _ -> decode_response(Status, Headers, Client)
+    case saci_utils:send_req(post, Url, ReqHeaders, ReqBody) of
+        {ok, Status, Headers, _Body} = Response ->
+            case Status of
+                "200" ->
+                    % need to read/skip the body to close the connection
+                    UploadUrl = proplists:get_value("Location", Headers),
+                    do_upload(UploadUrl, Object, RequestBody, Token, Options, Timeout);
+                _ -> Response
+            end;
+        Error ->
+            Error
     end.
 
 % @doc
@@ -67,95 +70,36 @@ upload_object(Object, RequestBody, Token) ->
 % Perform put request to upload the object to the given upload URL and return {ok, Object} or
 % {error, Reason}, where Object has the updated object properties.
 %
--spec do_upload(binary(), object(), request_body(), access_token()) -> {ok, object()} | {error, term()}.
-do_upload(Url, Object, RequestBody, Token) ->
+-spec do_upload(binary(), object(), request_body(), access_token(), list(), integer()) -> {ok, object()} | {error, term()}.
+do_upload(Url, Object, RequestBody, Token, Options, Timeout) ->
     ReqHeaders = add_auth_header(Token, [
         {<<"Content-Type">>, Object#object.contentType},
         {<<"Content-Length">>, Object#object.size}
     ]),
-    % Receiving the response after an upload can take a few seconds, so
-    % give it a chance to compute the MD5 and such before timing out. Set
-    % the timeout rather high as it seems that certain inputs can cause a
-    % long delay in response?
-    Options = [{recv_timeout, 300000}],
-    % Errors during upload are not unusual, so return them gracefully
-    % rather than exploding and generating a lengthy crash report.
-
-    %
-    % TODO: works on Erlang 19? but not on Erlang 20?
-    %
-    case saci_utils:send_req(put, Url, ReqHeaders, RequestBody, Options) of
-        {ok, Status, Headers, Client} ->
-            case decode_response(Status, Headers, Client) of
-                {ok, Body} -> {ok, make_object(Body)};
-                R0 -> R0
-            end;
-        R1 -> R1
-    end.
+    saci_utils:send_req(put, Url, ReqHeaders, RequestBody, Options, Timeout).
 
 % @doc
 %
 % Retrieve the object and save to the named file.
 %
--spec download_object(binary(), binary(), string(), credentials()) -> ok | {error, term()}.
-download_object(BucketName, ObjectName, Filename, Token) ->
-    ON = hackney_url:urlencode(ObjectName),
+-spec download_object(binary(), binary(), credentials(), list(), integer()) -> ok | {error, term()}.
+download_object(BucketName, ObjectName, Token, Options, Timeout) ->
+    ON = saci_utils:urlencode(ObjectName),
     UrlPath = <<BucketName/binary, "/o/", ON/binary>>,
-    Url = hackney_url:make_url(?BASE_URL, UrlPath, [{"alt", "media"}]),
+    Url = saci_utils:make_url(?BASE_URL, UrlPath, [{"alt", "media"}]),
     ReqHeaders = add_auth_header(Token, []),
-    {ok, Status, Headers, Client} = saci_utils:send_req(get, Url, ReqHeaders),
-    case Status of
-        200 ->
-            {ok, FileHandle} = file:open(Filename, [write]),
-            stream_to_file(FileHandle, Client);
-        _ -> decode_response(Status, Headers, Client)
-    end.
-
-% @doc
-%
-% Stream the response body of the HTTP request to the opened file. Returns
-% ok if successful, or {error, Reason} if not. The file will closed upon
-% successful download.
-%
--spec stream_to_file(term(), term()) -> ok | {error, term()}.
-stream_to_file(FileHandle, Client) ->
-    case hackney:stream_body(Client) of
-        done -> file:close(FileHandle);
-        {ok, Bin} ->
-            ok = file:write(FileHandle, Bin),
-            stream_to_file(FileHandle, Client);
-        R -> R
-    end.
-
+    saci_utils:send_req(get, Url, ReqHeaders, Options, Timeout).
+    
 % @doc
 %
 % Delete the named object in the named bucket.
 %
 -spec delete_object(binary(), binary(), credentials()) -> ok | {error, term()}.
 delete_object(BucketName, ObjectName, Token) ->
-    ON = hackney_url:urlencode(ObjectName),
+    ON = saci_utils:urlencode(ObjectName),
     Url = <<?BASE_URL/binary, BucketName/binary, "/o/", ON/binary>>,
     ReqHeaders = add_auth_header(Token, []),
-    {ok, Status, Headers, Client} = saci_utils:send_req(delete, Url, ReqHeaders),
-    decode_response(Status, Headers, Client).
-
-% @doc
-%
-% Construct an object record from the given property list.
-%
--spec make_object(list()) -> object().
-make_object(PropList) ->
-    #object{
-        id=proplists:get_value(<<"id">>, PropList),
-        name=proplists:get_value(<<"name">>, PropList),
-        bucket=proplists:get_value(<<"bucket">>, PropList),
-        contentType=proplists:get_value(<<"contentType">>, PropList),
-        timeCreated=proplists:get_value(<<"timeCreated">>, PropList),
-        updated=proplists:get_value(<<"updated">>, PropList),
-        storageClass=proplists:get_value(<<"storageClass">>, PropList),
-        size=proplists:get_value(<<"size">>, PropList),
-        md5Hash=proplists:get_value(<<"md5Hash">>, PropList)
-    }.
+    saci_utils:send_req(delete, Url, ReqHeaders).
 
 % @doc
 %
@@ -169,53 +113,6 @@ add_auth_header(Token, Headers) ->
     Headers ++ [
         {<<"Authorization">>, Authorization}
     ].
-
-% @doc
-%
-% Based on the response, return {ok, Body}, ok, or {error, Reason}. The
-% body is the decoded JSON response from the server. The error
-% 'auth_required' indicates a new authorization token must be retrieved. A
-% 204 returns 'ok', while a 403 returns {error, forbidden}, 404 returns
-% {error, not_found}, 409 returns {error, conflict}.
-%
--spec decode_response(integer(), list(), term()) -> {ok, term()} | {error, term()}.
-decode_response(400, _Headers, Client) ->
-    {ok, Body} = hackney:body(Client),
-    {error, Body};
-decode_response(401, _Headers, Client) ->
-    % need to read/skip the body to close the connection
-    hackney:skip_body(Client),
-    {error, auth_required};
-decode_response(403, _Headers, Client) ->
-    % need to read/skip the body to close the connection
-    hackney:skip_body(Client),
-    {error, forbidden};
-decode_response(404, _Headers, Client) ->
-    % need to read/skip the body to close the connection
-    hackney:skip_body(Client),
-    {error, not_found};
-decode_response(409, _Headers, Client) ->
-    % need to read/skip the body to close the connection
-    hackney:skip_body(Client),
-    {error, conflict};
-decode_response(Ok, _Headers, Client) when Ok == 200; Ok == 201 ->
-    {ok, Body} = hackney:body(Client),
-    try jsone:decode(Body, [{object_format, proplist}]) of
-        Results -> {ok, Results}
-    catch
-        Error -> Error
-    end;
-decode_response(204, _Headers, Client) ->
-    % need to read/skip the body to close the connection
-    hackney:skip_body(Client),
-    ok;
-decode_response(_Status, _Headers, Client) ->
-    {ok, Body} = hackney:body(Client),
-    try jsone:decode(Body, [{object_format, proplist}]) of
-        Results -> {ok, Results}
-    catch
-        Error -> Error
-    end.
 
 % @doc
 %

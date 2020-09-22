@@ -1,3 +1,14 @@
+%% -*- erlang -*-
+%%%
+%%% This file is part of hackney_lib released under the Apache 2 license.
+%%% See the NOTICE for more information.
+%%%
+%%% Copyright (c) 2012-2015 Benoît Chesneau <benoitc@e-engura.org>
+%%% Copyright (c) 2011, Magnus Klaar <magnus.klaar@gmail.com>
+%%%
+
+%% @doc module to manage URLs.
+
 -module(saci_utils).
 
 -include_lib("public_key/include/public_key.hrl").
@@ -8,8 +19,12 @@
 -export([
 	send_req/5,
 	send_req/4,
-  send_req/3,
+  send_req/3
+  ]).
+
+-export([
 	urlencode/1,
+  make_url/3,
   compute_md5/1
 	]).
 
@@ -22,6 +37,16 @@
 -spec load_credentials(string()) -> {ok, credentials()}.
 load_credentials(Filepath) ->
     {ok, JsonBin} = file:read_file(Filepath),
+    parse_credentials(JsonBin).
+
+% @doc
+%
+% Parse the credentials for the given binary Content, which is assumed to be a JSON
+% containing the client email address, project identifier, private key
+% in PEM format, as well as other properties.
+%
+-spec parse_credentials(binary()) -> {ok, credentials()}.
+parse_credentials(JsonBin) when is_binary(JsonBin) ->
     Creds = jsone:decode(JsonBin, [{object_format, proplist}]),
     {ok, #credentials{
         type=proplists:get_value(<<"type">>, Creds),
@@ -31,8 +56,6 @@ load_credentials(Filepath) ->
         client_email=proplists:get_value(<<"client_email">>, Creds),
         client_id=proplists:get_value(<<"client_id">>, Creds)
     }}.
-
-
 
 %% @doc URL encode a string binary.
 % -spec urlencode(binary() | string()) -> binary().
@@ -126,6 +149,39 @@ encode_form(KVs) ->
   CTypeHeaders = [{<<"Content-Type">>, <<"application/x-www-form-urlencoded; charset=utf-8">>}],
   {erlang:byte_size(Lines), CTypeHeaders, Lines}.
 
+%% @doc Construct an URL from a base URL, a path and a list of
+%% properties to give to the URL.
+make_url(Url, Path, Query) when is_list(Query) ->
+  %% a list of properties has been passed
+  make_url(Url, Path, qs(Query));
+make_url(Url, Path, Query) when is_binary(Path) ->
+  make_url(Url, [Path], Query);
+make_url(Url, PathParts, Query) when is_binary(Query) ->
+  %% create path
+  PathParts1 = [fix_path(P) || P <- PathParts, P /= "", P /= "/" orelse P /= <<"/">>],
+  Path = join([<<>> | PathParts1], <<"/">>),
+
+  %% initialise the query
+  Query1 = case Query of
+             <<>> -> <<>>;
+             _ -> << "?", Query/binary >>
+           end,
+
+  %% make the final uri
+  iolist_to_binary([fix_path(Url), Path, Query1]).
+
+fix_path(Path) when is_list(Path) ->
+  fix_path(list_to_binary(Path));
+fix_path(<<>>) ->
+  <<>>;
+fix_path(<<"/", Path/binary>>) ->
+  fix_path(Path);
+fix_path(Path) ->
+  case binary:part(Path, {size(Path), -1}) of
+    <<"/">> -> binary:part(Path, {0, size(Path) - 1});
+    _ -> Path
+  end.
+
 % HTTP Client Adapters
 
 send_req(Method, URL, Headers) ->
@@ -134,12 +190,20 @@ send_req(Method, URL, Headers) ->
 send_req(Method, URL, Headers, ReqBody) ->
 	send_req(Method, URL, Headers, ReqBody, []).
 
+send_req(put, URL, Headers, {file, Path}, Options) ->
+  {ok, Bin} = file:read_file(Path),
+  send_req(put, URL, Headers, Bin, Options ++ [{response_format, binary}]);
 send_req(post, URL, Headers, {form, PropListParams}, Options) ->
 	{_Size, CHeaders, ReqBody} = encode_form(PropListParams),
-	ibrowse:send_req(URL, CHeaders ++ Headers, post, ReqBody, Options ++ [{response_format, binary}]);
+	send_req(post, URL, CHeaders ++ Headers, ReqBody, Options ++ [{response_format, binary}]);
 send_req(Method, URL, Headers, ReqBody, Options) ->
-	ibrowse:send_req(URL, Headers, Method, ReqBody, Options).
+	ibrowse:send_req(to_str(URL), Headers, Method, ReqBody, Options).
 	% {ok, Status, Headers, Client} = ibrowse:send_req(?AUTH_URL, [], post, ReqBody, []),
+
+to_str(Num) when is_integer(Num) -> integer_to_list(Num);
+to_str(Str) when is_list(Str) -> Str;
+to_str(Atom)  when is_atom(Atom) -> atom_to_list(Atom);
+to_str(Bin) when is_binary(Bin) -> binary_to_list(Bin).
 
 % @doc
 %
