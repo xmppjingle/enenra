@@ -26,7 +26,7 @@
 -include("saci.hrl").
 
 -export([
-    upload_file/5,
+    upload_file/6,
     download_file/6,
     delete_object/3
     ]).
@@ -37,15 +37,20 @@
 % Object, to the bucket named in the Object#bucket field. The returned
 % Object value will have the updated properties.
 %
--spec upload_file(Filename, Object, Token, Options, Timeout) -> {ok, Object} | {error, Reason} when
+-spec upload_file(Filename, BucketName, ObjectName, Token, Options, Timeout) -> {ok, Object} | {error, Reason} when
     Filename :: string(),
-    Object :: object(),
+    BucketName :: string(),
+    ObjectName :: string(),
     Token :: access_token(),
     Options :: list(),
     Timeout :: integer(),
+    Object :: object(),
     Reason :: term().
-upload_file(Filename, Object, Token, Options, Timeout) ->
+upload_file(Filename, BucketName, ObjectName, Token, Options, Timeout) ->
     RequestBody = {file, Filename},
+    {ok, Md5} = saci:compute_md5(Filename),
+    Size = filelib:file_size(Filename),
+    Object = #object{ name = ObjectName, bucket = BucketName, md5Hash = Md5, size = Size},
     saci_service:upload_object(Object, RequestBody, Token, Options, Timeout).
 
 % @doc
