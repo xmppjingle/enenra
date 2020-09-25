@@ -246,8 +246,8 @@ compute_md5(Filehandle, Context) ->
         R -> R
     end.
 
-mime_type(FileName) ->
-    "." ++ Extension = filename:extension(FileName),
+mime_type(Filename) when is_list(Filename) ->
+    "." ++ Extension = filename:extension(Filename),
     MimeTypes = mime_types(),
     proplists:get_value(Extension, MimeTypes, undefined);
 mime_type(_) ->

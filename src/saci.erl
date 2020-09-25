@@ -48,8 +48,8 @@ start_link() ->
 %
 -spec upload_file(Filename, BucketName, ObjectName, Token, Options, Timeout) -> {ok, Object} | {error, Reason} when
     Filename :: string(),
-    BucketName :: string(),
-    ObjectName :: string(),
+    BucketName :: binary(),
+    ObjectName :: binary(),
     Token :: access_token(),
     Options :: list(),
     Timeout :: integer(),
@@ -59,7 +59,8 @@ upload_file(Filename, BucketName, ObjectName, Token, Options, Timeout) ->
     RequestBody = {file, Filename},
     {ok, Md5} = saci_utils:compute_md5(Filename),
     Size = filelib:file_size(Filename),
-    Object = #object{ name = ObjectName, bucket = BucketName, md5Hash = Md5, size = Size},
+    ContentType = saci_utils:mime_type(Filename),
+    Object = #object{ name = ObjectName, bucket = BucketName, contentType = ContentType, md5Hash = Md5, size = Size},
     saci_service:upload_object(Object, RequestBody, Token, Options, Timeout).
 
 % @doc
