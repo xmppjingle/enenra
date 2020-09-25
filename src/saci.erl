@@ -34,10 +34,11 @@
 -export([start/0, start_link/0]).
 
 start() ->
-    ok.
+    gen_server:start({local, ?MODULE}, ?MODULE, [], []).
 
 start_link() ->
-    ok.
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
 
 % @doc
 %

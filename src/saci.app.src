@@ -8,6 +8,5 @@
         jsone,
         ibrowse
     ]},
-    {env, []},
-    {mod, {saci, []}}
+    {env, []}
 ]}.
