@@ -31,6 +31,14 @@
     delete_object/3
     ]).
 
+-export([start/0, start_link/0]).
+
+start() ->
+    ok.
+
+start_link() ->
+    ok.
+
 % @doc
 %
 % Upload the file identified by Filename, with the properties given by
