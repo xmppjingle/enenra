@@ -20,7 +20,7 @@
   ]).
 
 -export([
-	send_req/5,
+	send_req/6,
 	send_req/4,
   send_req/3
   ]).
@@ -188,19 +188,19 @@ fix_path(Path) ->
 % HTTP Client Adapters
 
 send_req(Method, URL, Headers) ->
-  send_req(Method, URL, Headers, <<>>, []).
+  send_req(Method, URL, Headers, <<>>, [], 15000).
 
 send_req(Method, URL, Headers, ReqBody) ->
-	send_req(Method, URL, Headers, ReqBody, []).
+	send_req(Method, URL, Headers, ReqBody, [], 15000).
 
-send_req(put, URL, Headers, {file, Path}, Options) ->
+send_req(put, URL, Headers, {file, Path}, Options, Timeout) ->
   {ok, Bin} = file:read_file(Path),
-  send_req(put, URL, Headers, Bin, Options ++ [{response_format, binary}]);
-send_req(post, URL, Headers, {form, PropListParams}, Options) ->
+  send_req(put, URL, Headers, Bin, Options ++ [{response_format, binary}], Timeout);
+send_req(post, URL, Headers, {form, PropListParams}, Options, Timeout) ->
 	{_Size, CHeaders, ReqBody} = encode_form(PropListParams),
-	send_req(post, URL, CHeaders ++ Headers, ReqBody, Options ++ [{response_format, binary}]);
-send_req(Method, URL, Headers, ReqBody, Options) ->
-	ibrowse:send_req(to_str(URL), Headers, Method, ReqBody, Options).
+	send_req(post, URL, CHeaders ++ Headers, ReqBody, Options ++ [{response_format, binary}], Timeout);
+send_req(Method, URL, Headers, ReqBody, Options, Timeout) ->
+	ibrowse:send_req(to_str(URL), Headers, Method, ReqBody, Options, Timeout).
 	% {ok, Status, Headers, Client} = ibrowse:send_req(?AUTH_URL, [], post, ReqBody, []),
 
 to_str(Num) when is_integer(Num) -> integer_to_list(Num);

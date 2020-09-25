@@ -6,8 +6,8 @@
         kernel,
         stdlib,
         jsone,
-        ibrowse
+        ibrowse,
+        mimetypes
     ]},
-    {env, []},
-    {mod, {saci, []}}
+    {env, []}
 ]}.

@@ -31,6 +31,17 @@
     delete_object/3
     ]).
 
+-export([start/0, start_link/0]).
+
+start() ->
+    application:ensure_all_started(mimetypes),
+    gen_server:start({local, ?MODULE}, ?MODULE, [], []).
+
+start_link() ->
+    application:ensure_all_started(mimetypes),
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+
 % @doc
 %
 % Upload the file identified by Filename, with the properties given by
@@ -39,8 +50,8 @@
 %
 -spec upload_file(Filename, BucketName, ObjectName, Token, Options, Timeout) -> {ok, Object} | {error, Reason} when
     Filename :: string(),
-    BucketName :: string(),
-    ObjectName :: string(),
+    BucketName :: binary(),
+    ObjectName :: binary(),
     Token :: access_token(),
     Options :: list(),
     Timeout :: integer(),
@@ -48,9 +59,10 @@
     Reason :: term().
 upload_file(Filename, BucketName, ObjectName, Token, Options, Timeout) ->
     RequestBody = {file, Filename},
-    {ok, Md5} = saci:compute_md5(Filename),
+    {ok, Md5} = saci_utils:compute_md5(Filename),
     Size = filelib:file_size(Filename),
-    Object = #object{ name = ObjectName, bucket = BucketName, md5Hash = Md5, size = Size},
+    [ContentType] = mimetypes:filename(Filename),
+    Object = #object{ name = ObjectName, bucket = BucketName, contentType = ContentType, md5Hash = Md5, size = Size},
     saci_service:upload_object(Object, RequestBody, Token, Options, Timeout).
 
 % @doc
