@@ -28,8 +28,7 @@
 -export([
 	urlencode/1,
   make_url/3,
-  compute_md5/1,
-  mime_type/1
+  compute_md5/1
 	]).
 
 % @doc
@@ -245,16 +244,3 @@ compute_md5(Filehandle, Context) ->
             end;
         R -> R
     end.
-
-mime_type(Filename) when is_list(Filename) ->
-    "." ++ Extension = filename:extension(Filename),
-    MimeTypes = mime_types(),
-    proplists:get_value(Extension, MimeTypes, undefined);
-mime_type(_) ->
-    undefined.
-
-mime_types() ->
-    MimeTypesFile = filename:join(code:lib_dir(inets), 
-                                  "examples/server_root/conf/mime.types"),
-    {ok, MimeTypes} = httpd_conf:load_mime_types(MimeTypesFile),
-    MimeTypes.
