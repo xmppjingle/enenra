@@ -29,7 +29,7 @@
 	urlencode/1,
   make_url/3,
   compute_md5/1,
-  mime_types/1
+  mime_type/1
 	]).
 
 % @doc
