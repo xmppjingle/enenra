@@ -57,7 +57,7 @@ start_link() ->
     Reason :: term().
 upload_file(Filename, BucketName, ObjectName, Token, Options, Timeout) ->
     RequestBody = {file, Filename},
-    {ok, Md5} = saci:compute_md5(Filename),
+    {ok, Md5} = saci_utils:compute_md5(Filename),
     Size = filelib:file_size(Filename),
     Object = #object{ name = ObjectName, bucket = BucketName, md5Hash = Md5, size = Size},
     saci_service:upload_object(Object, RequestBody, Token, Options, Timeout).

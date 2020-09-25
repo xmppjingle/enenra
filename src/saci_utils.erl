@@ -28,7 +28,8 @@
 -export([
 	urlencode/1,
   make_url/3,
-  compute_md5/1
+  compute_md5/1,
+  mime_types/1
 	]).
 
 % @doc
@@ -244,3 +245,10 @@ compute_md5(Filehandle, Context) ->
             end;
         R -> R
     end.
+
+mime_type(FileName) ->
+    "." ++ Extension = filename:extension(FileName),
+    MimeTypes = mime_types(),
+    proplists:get_value(Extension, MimeTypes, undefined);
+mime_type(_) ->
+    undefined.
