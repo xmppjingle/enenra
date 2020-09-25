@@ -34,9 +34,11 @@
 -export([start/0, start_link/0]).
 
 start() ->
+    application:ensure_all_started(mimetypes),
     gen_server:start({local, ?MODULE}, ?MODULE, [], []).
 
 start_link() ->
+    application:ensure_all_started(mimetypes),
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 
