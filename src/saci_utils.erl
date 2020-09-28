@@ -28,7 +28,8 @@
 -export([
 	urlencode/1,
   make_url/3,
-  compute_md5/1
+  compute_md5/1,
+  add_auth_header/2
 	]).
 
 % @doc
@@ -59,6 +60,19 @@ parse_credentials(JsonBin) when is_binary(JsonBin) ->
         client_email=proplists:get_value(<<"client_email">>, Creds),
         client_id=proplists:get_value(<<"client_id">>, Creds)
     }}.
+
+% @doc
+%
+% Add the "Authorization" header to those given and return the new list.
+%
+-spec add_auth_header(access_token(), list()) -> list().
+add_auth_header(Token, Headers) ->
+    AccessToken = Token#access_token.access_token,
+    TokenType = Token#access_token.token_type,
+    Authorization = <<TokenType/binary, " ", AccessToken/binary>>,
+    Headers ++ [
+        {<<"Authorization">>, Authorization}
+    ].
 
 %% @doc URL encode a string binary.
 % -spec urlencode(binary() | string()) -> binary().

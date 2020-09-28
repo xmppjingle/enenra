@@ -42,7 +42,7 @@ upload_object(Object, RequestBody, Token, Options, Timeout) ->
     BucketName = Object#object.bucket,
     Url = saci_utils:make_url(
         ?UPLOAD_URL, <<BucketName/binary, "/o">>, [{"uploadType", "resumable"}]),
-    ReqHeaders = add_auth_header(Token, [
+    ReqHeaders = saci_utils:add_auth_header(Token, [
         {<<"Content-Type">>, <<"application/json; charset=UTF-8">>},
         {<<"X-Upload-Content-Type">>, Object#object.contentType},
         {<<"X-Upload-Content-Length">>, Object#object.size}
@@ -72,7 +72,7 @@ upload_object(Object, RequestBody, Token, Options, Timeout) ->
 %
 -spec do_upload(binary(), object(), request_body(), access_token(), list(), integer()) -> {ok, object()} | {error, term()}.
 do_upload(Url, Object, RequestBody, Token, Options, Timeout) ->
-    ReqHeaders = add_auth_header(Token, [
+    ReqHeaders = saci_utils:add_auth_header(Token, [
         {<<"Content-Type">>, Object#object.contentType},
         {<<"Content-Length">>, Object#object.size}
     ]),
@@ -87,7 +87,7 @@ download_object(BucketName, ObjectName, Token, Options, Timeout) ->
     ON = saci_utils:urlencode(ObjectName),
     UrlPath = <<BucketName/binary, "/o/", ON/binary>>,
     Url = saci_utils:make_url(?BASE_URL, UrlPath, [{"alt", "media"}]),
-    ReqHeaders = add_auth_header(Token, []),
+    ReqHeaders = saci_utils:add_auth_header(Token, []),
     saci_utils:send_req(get, Url, ReqHeaders, Options, Timeout).
     
 % @doc
@@ -98,21 +98,8 @@ download_object(BucketName, ObjectName, Token, Options, Timeout) ->
 delete_object(BucketName, ObjectName, Token) ->
     ON = saci_utils:urlencode(ObjectName),
     Url = <<?BASE_URL/binary, BucketName/binary, "/o/", ON/binary>>,
-    ReqHeaders = add_auth_header(Token, []),
+    ReqHeaders = saci_utils:add_auth_header(Token, []),
     saci_utils:send_req(delete, Url, ReqHeaders).
-
-% @doc
-%
-% Add the "Authorization" header to those given and return the new list.
-%
--spec add_auth_header(access_token(), list()) -> list().
-add_auth_header(Token, Headers) ->
-    AccessToken = Token#access_token.access_token,
-    TokenType = Token#access_token.token_type,
-    Authorization = <<TokenType/binary, " ", AccessToken/binary>>,
-    Headers ++ [
-        {<<"Authorization">>, Authorization}
-    ].
 
 % @doc
 %
