@@ -22,7 +22,7 @@ gcp_auth_upload_test() ->
 	
 	saci_service:delete_object(Bucket, Name, Token),
 
-	{ok, "200", _, _} = saci_service:upload_object(#object{ name = Name, bucket = Bucket, contentType = <<"image/jpeg">>, md5Hash = Md5, size = Size}, {file, filename:absname(File)}, Token),
+	{ok, "200", _, _} = saci_service:upload_object(#object{ name = Name, bucket = Bucket, contentType = <<"image/jpeg">>, md5Hash = Md5, size = Size}, {file, filename:absname(File)}, [{"predefinedAcl", "private"}], Token, [], 10000),
 	
 	?debugFmt("Upload of ~p Completed.~n", [File]),
 	

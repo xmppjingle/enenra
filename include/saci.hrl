@@ -33,6 +33,9 @@
 }.
 -export_type([access_token/0]).
 
+-type req_params() :: [term()].
+-export_type([req_params/0]).
+
 -record(bucket, {
     id :: binary(),
     projectNumber :: binary(),

@@ -27,6 +27,7 @@
 
 -export([
     upload_file/6,
+    upload_file/7,
     download_file/6,
     delete_object/3
     ]).
@@ -48,6 +49,30 @@ start_link() ->
 % Object, to the bucket named in the Object#bucket field. The returned
 % Object value will have the updated properties.
 %
+-spec upload_file(Filename, BucketName, ObjectName, Params, Token, Options, Timeout) -> {ok, Object} | {error, Reason} when
+    Filename :: string(),
+    BucketName :: binary(),
+    ObjectName :: binary(),
+    Params :: req_params(),
+    Token :: access_token(),
+    Options :: list(),
+    Timeout :: integer(),
+    Object :: object(),
+    Reason :: term().
+upload_file(Filename, BucketName, ObjectName, Params, Token, Options, Timeout) ->
+    RequestBody = {file, Filename},
+    {ok, Md5} = saci_utils:compute_md5(Filename),
+    Size = filelib:file_size(Filename),
+    [ContentType] = mimetypes:filename(Filename),
+    Object = #object{ name = ObjectName, bucket = BucketName, contentType = ContentType, md5Hash = Md5, size = Size},
+    saci_service:upload_object(Object, RequestBody, Params, Token, Options, Timeout).
+
+% @doc
+%
+% Upload the file identified by Filename, with the properties given by
+% Object, to the bucket named in the Object#bucket field. The returned
+% Object value will have the updated properties.
+%
 -spec upload_file(Filename, BucketName, ObjectName, Token, Options, Timeout) -> {ok, Object} | {error, Reason} when
     Filename :: string(),
     BucketName :: binary(),
@@ -58,12 +83,7 @@ start_link() ->
     Object :: object(),
     Reason :: term().
 upload_file(Filename, BucketName, ObjectName, Token, Options, Timeout) ->
-    RequestBody = {file, Filename},
-    {ok, Md5} = saci_utils:compute_md5(Filename),
-    Size = filelib:file_size(Filename),
-    [ContentType] = mimetypes:filename(Filename),
-    Object = #object{ name = ObjectName, bucket = BucketName, contentType = ContentType, md5Hash = Md5, size = Size},
-    saci_service:upload_object(Object, RequestBody, Token, Options, Timeout).
+    upload_file(Filename, BucketName, ObjectName, [], Token, Options, Timeout).
 
 % @doc
 %

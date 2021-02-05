@@ -13,6 +13,7 @@
     get_auth_token/1,
     download_object/5,
     upload_object/5,
+    upload_object/6,
     delete_object/3
     ]).
 
@@ -39,9 +40,18 @@
 %
 -spec upload_object(object(), request_body(), access_token(), list(), integer()) -> {ok, object()} | {error, term()}.
 upload_object(Object, RequestBody, Token, Options, Timeout) ->
+    upload_object(Object, RequestBody, [], Token, Options, Timeout).
+
+% @doc
+%
+% Upload an object to the named bucket and return {ok, Object} or {error,
+% Reason}, where Object has the updated object properties.
+%
+-spec upload_object(object(), request_body(), req_params(), access_token(), list(), integer()) -> {ok, object()} | {error, term()}.
+upload_object(Object, RequestBody, Params, Token, Options, Timeout) ->
     BucketName = Object#object.bucket,
     Url = saci_utils:make_url(
-        ?UPLOAD_URL, <<BucketName/binary, "/o">>, [{"uploadType", "resumable"}]),
+        ?UPLOAD_URL, <<BucketName/binary, "/o">>, [{"uploadType", "resumable"}] ++ Params),
     ReqHeaders = saci_utils:add_auth_header(Token, [
         {<<"Content-Type">>, <<"application/json; charset=UTF-8">>},
         {<<"X-Upload-Content-Type">>, Object#object.contentType},
